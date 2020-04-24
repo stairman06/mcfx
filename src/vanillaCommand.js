@@ -1,5 +1,6 @@
 const { commandSay } = require("./command/say");
 const { commandTell } = require("./command/tell");
+const { commandTeleport } = require("./command/teleport");
 
 function parseVanillaLine(line, variables) {
   const keys = line.split(" ");
@@ -9,6 +10,9 @@ function parseVanillaLine(line, variables) {
     case "tell":
     case "w":
       return commandTell(keys, variables);
+    case "tp":
+    case "teleport":
+      return commandTeleport(keys, variables);
   }
 }
 
