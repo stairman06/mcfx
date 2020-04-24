@@ -3,7 +3,7 @@ const fs = require("fs");
 const rimraf = require("rimraf");
 const { compileMCFXFile, getLoadToAdd } = require("./src/mcfxCompile");
 
-const srcPath = path.join("./example");
+const srcPath = path.join("./testing");
 const dpMeta = JSON.parse(fs.readFileSync(path.join(srcPath, "dp.json")));
 
 const outPath = path.join("./out");
