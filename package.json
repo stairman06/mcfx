@@ -1,0 +1,10 @@
+{
+  "name": "mcfx-compiler",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "rimraf": "^3.0.2"
+  }
+}
