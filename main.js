@@ -15,7 +15,6 @@ if (fs.existsSync(outPath)) {
 fs.mkdirSync(outPath);
 
 console.log(`MCFX Compiler 0.1`);
-console.log(dpMeta.id);
 
 fs.mkdirSync(path.join(outPath, "data"));
 fs.mkdirSync(path.join(outPath, "data", dpMeta.id));
@@ -59,6 +58,9 @@ function compileFunctions(functionsPath, subPath) {
 }
 
 fs.mkdirSync(path.join(outPath, `/data/${dpMeta.id}/functions`));
+fs.mkdirSync(
+  path.join(outPath, `/data/${dpMeta.id}/functions/__mcfx_subroutine`)
+);
 
 fs.readdir(path.join(srcPath, "data"), async (error, data) => {
   for (let dpData of data) {
@@ -87,3 +89,17 @@ fs.readdir(path.join(srcPath, "data"), async (error, data) => {
     );
   }
 });
+
+function createSubroutine(data) {
+  const id = Math.random().toString(36).substring(8);
+  fs.writeFileSync(
+    path.join(
+      outPath,
+      `/data/${dpMeta.id}/functions/__mcfx_subroutine/${id}.mcfunction`
+    ),
+    data
+  );
+  return id;
+}
+
+module.exports = { createSubroutine };

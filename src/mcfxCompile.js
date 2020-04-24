@@ -70,7 +70,7 @@ function parseLine(line, fileName, dpID) {
       case "sendchat":
         return commandSendChat(keys, definedVariables);
       default:
-        return parseVanillaLine(line, definedVariables);
+        return parseVanillaLine(line, definedVariables, dpID);
     }
   }
 
@@ -86,12 +86,11 @@ function compileMCFXFile(fileData, fileName, dpID) {
 }
 
 function getLoadToAdd() {
-  console.log("getting lta");
-  console.log(loadToAdd);
   return loadToAdd;
 }
 
 module.exports = {
   compileMCFXFile,
   getLoadToAdd,
+  parseLine,
 };
