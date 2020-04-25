@@ -8,6 +8,8 @@ function compileAction(action) {
         return `at ${action.pos.x} ${action.pos.y} ${action.pos.z}`;
 
       return `at @s`;
+    case "as":
+      return `as ${action.target}`;
     case "run":
       return `run ${action.command}`;
   }
@@ -97,8 +99,9 @@ function commandExecute(keys, variables, dpID) {
     .filter((act) => act.action !== "skip");
 
   const compiled = parsed.map((action, index) => {
-    const copyAct = { ...action };
     switch (action.action) {
+      case "as":
+        return action;
       case "at":
         if (action.pos) {
           // At a position

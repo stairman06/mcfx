@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { parseVanillaLine } = require("./vanillaCommand");
 const { commandSendChat } = require("./command/sendChat");
+const operationParser = require("./util/operationParser");
 
 const loadToAdd = [
   `tellraw @a [{"text":"MCFX ALPHA","bold":true},{"text":" Loaded", "bold":false}]`,
@@ -9,6 +10,7 @@ const loadToAdd = [
 const operations = ["+=", "/=", "%=", "-=", "*="];
 
 let definedVariables = {};
+let globalVariables = {};
 
 function generateUniqueID(varName, fileName, dpID) {
   const sum = crypto.createHash("sha1");
@@ -18,6 +20,7 @@ function generateUniqueID(varName, fileName, dpID) {
 
 function parseLine(line, fileName, dpID) {
   const keys = line.split(" ");
+  let variables = { ...definedVariables, ...globalVariables };
   if (keys[0] !== "#") {
     switch (keys[0]) {
       case "define":
@@ -29,48 +32,63 @@ function parseLine(line, fileName, dpID) {
             fileName,
             dpID
           )}`;
+
           definedVariables[keys[2]] = {
             type: "int",
             scoreboardID,
           };
 
+          if (keys[4] === "global") {
+            globalVariables[keys[2]] = {
+              type: "int",
+              scoreboardID,
+            };
+          }
+
           loadToAdd.push(`scoreboard objectives add ${scoreboardID} dummy`);
           return `scoreboard players set MCFX-VAR ${scoreboardID} ${keys[3]}`;
         }
       case "set":
+        const scoreboardID = variables[keys[1]].scoreboardID;
         if (operations.includes(keys[2])) {
-          const scoreboardID = definedVariables[keys[1]].scoreboardID;
-          if (Object.keys(definedVariables).includes(keys[3])) {
+          if (Object.keys(variables).includes(keys[3])) {
             return [
               `scoreboard players operation MCFX-VAR ${scoreboardID} ${
                 keys[2]
-              } MCFX-VAR ${definedVariables[keys[3]].scoreboardID}`,
+              } MCFX-VAR ${variables[keys[3]].scoreboardID}`,
             ];
           } else {
             // Performing an operation
-            const objName = `mathtemp${Math.random()
-              .toString(36)
-              .substring(7)}`;
-            return [
-              `scoreboard objectives add ${objName} dummy`,
-              `scoreboard players set MCFX-MATHTEMP ${objName} ${keys[3]}`,
-              `scoreboard players operation MCFX-VAR ${scoreboardID} ${keys[2]} MCFX-MATHTEMP ${objName}`,
-              `scoreboard objectives remove ${objName}`,
-            ].join("\n");
+            return operationParser(
+              keys[1],
+              keys[2],
+              keys[3],
+              variables,
+              "direct"
+            );
           }
-        } else if (Object.keys(definedVariables).includes(keys[2])) {
+        } else if (keys[2].substring(0, 1) === "(") {
+          // Setting to an expression
+          return operationParser(
+            keys[2].substring(1),
+            keys[3],
+            keys[4].substring(0, keys[4].length - 1),
+            variables,
+            keys[1]
+          );
+        } else if (Object.keys(variables).includes(keys[2])) {
           // Setting a variable to another one
           return `scoreboard players operation MCFX-VAR ${scoreboardID} = MCFX-VAR ${
-            definedVariables[keys[2]].scoreboardID
+            variables[keys[2]].scoreboardID
           }`;
         } else {
           // Setting a variable
           return `scoreboard players set MCFX-VAR ${scoreboardID} ${keys[2]}`;
         }
       case "sendchat":
-        return commandSendChat(keys, definedVariables);
+        return commandSendChat(keys, variables);
       default:
-        return parseVanillaLine(line, definedVariables, dpID);
+        return parseVanillaLine(line, variables, fileName, dpID);
     }
   }
 

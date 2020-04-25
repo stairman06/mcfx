@@ -1,9 +1,11 @@
 const isSelector = require("./isSelector");
+const CompileError = require("../error/compileError");
 // Converts a standard, non-JSON Object string (e.g. "Test ${variable}") into a JSON one for tellraw output
 function parseChatString(
   outString,
   variables,
   selector,
+  fileName,
   outputTellraw = [],
   backupCommand,
   useSelectorInBackup
@@ -26,12 +28,23 @@ function parseChatString(
         selector: varName,
       });
     } else {
-      outputTellraw.push({
-        score: {
-          name: "MCFX-VAR",
-          objective: variables[varName].scoreboardID,
-        },
-      });
+      const variable = variables[varName];
+      if (variable) {
+        if (variable.type === "int") {
+          outputTellraw.push({
+            score: {
+              name: "MCFX-VAR",
+              objective: variable.scoreboardID,
+            },
+          });
+        }
+      } else {
+        CompileError.exception("undeclared-variable", {
+          varName,
+          fileName,
+        });
+        return;
+      }
     }
 
     posOfLastMatch = match.length + start;

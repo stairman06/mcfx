@@ -3,12 +3,13 @@ const { commandTell } = require("./command/tell");
 const { commandTeleport } = require("./command/teleport");
 const { commandExecute } = require("./command/execute");
 const { commandSetblock } = require("./command/setblock");
+const { commandSummon } = require("./command/summon");
 
-function parseVanillaLine(line, variables, dpID) {
+function parseVanillaLine(line, variables, fileName, dpID) {
   const keys = line.split(" ");
   switch (keys[0]) {
     case "say":
-      return commandSay(keys, variables);
+      return commandSay(keys, variables, fileName);
     case "tell":
     case "w":
       return commandTell(keys, variables);
@@ -19,6 +20,8 @@ function parseVanillaLine(line, variables, dpID) {
       return commandExecute(keys, variables, dpID);
     case "setblock":
       return commandSetblock(keys, variables);
+    case "summon":
+      return commandSummon(keys, variables);
     default:
       return line;
   }

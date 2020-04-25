@@ -1,11 +1,12 @@
 const parseChatString = require("../util/chatStringParser");
 
-function commandSay(keys, variables) {
+function commandSay(keys, variables, fileName) {
   keys.shift();
   return parseChatString(
     keys.join(" "),
     variables,
     "@a",
+    fileName,
     [
       {
         text: "[",

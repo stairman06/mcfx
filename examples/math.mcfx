@@ -1,0 +1,9 @@
+define int firstNumber 20
+define int secondNumber 30
+define int output 0
+
+say Adding ${firstNumber} and ${secondNumber} together
+
+set output (firstNumber += secondNumber)
+
+say Output is ${output}

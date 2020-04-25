@@ -1,10 +1,12 @@
 {
   "name": "mcfx-compiler",
-  "version": "1.0.0",
+  "version": "0.1.1-alpha",
   "scripts": {
     "start": "node main.js"
   },
   "dependencies": {
-    "rimraf": "^3.0.2"
+    "chalk": "^4.0.0",
+    "rimraf": "^3.0.2",
+    "yargs": "^15.3.1"
   }
 }
