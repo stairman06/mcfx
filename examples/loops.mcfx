@@ -1,0 +1,12 @@
+# Loops allow you to repeat lines of code without copying and pasting it multiple times
+
+# Creates a Loop that lasts 20 iterations
+# The iterator alias is named "iterator"
+# By default, loops start at 0
+# If you want a loop to start at 1, just add "startAtOne" to the end
+loop start 20 iterator
+
+# Says the value of the iterator
+say ${iterator}
+
+loop end
