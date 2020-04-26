@@ -1,0 +1,3 @@
+# Make sure to place template_example.mcfxt in the templates folder
+
+template sayString @p "hello"

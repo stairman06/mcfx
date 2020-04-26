@@ -1,0 +1,11 @@
+# MCFX Template Example
+# Place this in datapack_source/templates/
+
+# Syntax: define template <name> [args]
+# define - Defining something
+# template - Defining a template
+# name - The name of the template
+# args - The name of the arguments
+define template sayString name whatToSay
+
+sendchat @a ${name} says ${whatToSay}

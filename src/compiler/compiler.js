@@ -2,7 +2,11 @@ const path = require("path");
 const fs = require("fs");
 const rimraf = require("rimraf");
 const chalk = require("chalk");
-const { compileMCFXFile, getLoadToAdd } = require("../mcfxCompile");
+const {
+  compileMCFXFile,
+  compileMCFXTFile,
+  getLoadToAdd,
+} = require("../mcfxCompile");
 const pkg = require("../../package.json");
 
 const Compiler = {
@@ -75,6 +79,18 @@ const Compiler = {
                 `${subPath}${path.parse(file).name}`,
                 this.dpMeta.id
               )
+                .replace(/<<empty>>/g, "")
+                .replace(/^\s*\n/gm, "")
+            );
+
+            resolve();
+          } else if (path.extname(file) === ".mcfxt") {
+            compileMCFXTFile(
+              fs
+                .readFileSync(path.join(functionsPath, subPath, file), "utf8")
+                .replace(/\r/g, ""),
+              `${subPath}${file}`,
+              this.dpMeta.id
             );
 
             resolve();
@@ -85,7 +101,10 @@ const Compiler = {
   },
 
   startCompilation() {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+      if (fs.existsSync(path.join(this.srcPath, `/templates`))) {
+        await this.compileFunctions(path.join(this.srcPath, "/templates"), "/");
+      }
       fs.readdir(
         path.join(this.srcPath, `data/${this.dpMeta.id}`),
         async (error, data) => {

@@ -1,0 +1,19 @@
+# An alias is a way to replace something with something else during compile time
+
+define alias commandToUse say
+define alias stringToUse hello
+${commandToUse} ${stringToUse}
+# Outputs "say hello"
+
+# Aliases can be used in any situation, including ones where variables can't
+define alias entity minecraft:zombie
+summon ${entity} ~ ~ ~
+
+# You can even change aliases throught a file
+set entity minecraft:creeper
+summon ${entity} ~ ~ ~
+
+# The downside of Aliases is that they are used during compilation, not runtime
+# The Minecraft game has no idea these aliases exist
+# If you want to change a value dynamically or while the game is running,
+# use a variable

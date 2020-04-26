@@ -1,4 +1,4 @@
-const selectors = ["@a", "@r", "@s", "@e"];
+const selectors = ["@a", "@r", "@s", "@e", "@p"];
 function isSelector(string) {
   return selectors.includes(string.substring(0, 2));
 }
