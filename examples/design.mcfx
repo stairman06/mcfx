@@ -1,0 +1,47 @@
+# This is how I want the language to be designed
+# Not all of this is implemented yet
+
+
+# -- Variables --
+define int testInt = 10
+define string testString = 'Hello'
+
+say ${testString} ${testInt}
+
+# -- Expressions --
+define int firstNumber = 5
+define int secondNumber = 10
+
+say ${firstNumber + secondNumber}
+
+define int secondOutput = (firstNumber * 2) / secondNumber
+
+# -- Aliases --
+define alias testAliasCommand = say
+define alias testAliasSelector = @p
+
+${testAliasCommand} ${testAliasSelector}
+
+# -- Loops --
+loop start 20 iterator startAtOne
+  say ${iterator + 20}
+loop end
+
+# -- Recalls --
+define recall testRecall
+  say Test Recall
+define end
+
+recall testRecall
+
+# -- Dynamic Score Creation --
+execute if score @p testScore >= ${10} run say Greater than 10
+
+# Compiles to:
+# scoreboard objectives add mathtemp11111 dummy
+# scoreboard players set MCFX-MATHTEMP mathtemp11111 10
+# execute if score @p testScore >= MCFX-MATHTEMP mathtemp11111 run say Great than 10
+# scoreboard objectives remove mathtemp11111
+
+
+

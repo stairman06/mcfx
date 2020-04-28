@@ -4,6 +4,11 @@ const { commandSendChat } = require("./command/sendChat");
 const operationParser = require("./util/operationParser");
 const getVarName = require("./util/getVarName");
 const isSelector = require("./util/isSelector");
+const {
+  expressionParser,
+  generateScoreboardCommands,
+  operators,
+} = require("./util/expressionParser");
 
 const loadToAdd = [
   `tellraw @a [{"text":"MCFX ALPHA","bold":true},{"text":" Loaded", "bold":false}]`,
@@ -119,23 +124,37 @@ function parseLine(line, fileName, dpID, varOverride) {
               fileName,
               dpID
             )}`;
-            let typeToUse = type;
+
+            const expressionScoreboard = generateScoreboardCommands(
+              expressionParser(keys.slice(3).join(" "), variables),
+              variables,
+              scoreboardID
+            );
+
             definedVariables[name] = {
               type: "int",
               scoreboardID,
-              value,
             };
 
             if (context === "global") {
               globalVariables[name] = {
                 type: "int",
                 scoreboardID,
-                value,
               };
             }
 
             loadToAdd.push(`scoreboard objectives add ${scoreboardID} dummy`);
-            return `scoreboard players set MCFX-VAR ${scoreboardID} ${value}`;
+
+            if (!expressionScoreboard.isSingle) {
+              return [
+                ...expressionScoreboard.actions,
+                ...expressionScoreboard.cleanup,
+              ].join("\n");
+            } else {
+              return [
+                `scoreboard players set MCFX-VAR ${scoreboardID} ${expressionScoreboard.value}`,
+              ];
+            }
           } else if (isAlias) {
             definedVariables[name] = {
               type: "raw",
@@ -155,42 +174,27 @@ function parseLine(line, fileName, dpID, varOverride) {
         case "set":
           const settingVariable = variables[keys[1]];
           if (settingVariable.type === "int" && !settingVariable.alias) {
-            const scoreboardID = variables[keys[1]].scoreboardID;
-            if (operations.includes(keys[2])) {
-              if (Object.keys(variables).includes(keys[3])) {
-                return [
-                  `scoreboard players operation MCFX-VAR ${scoreboardID} ${
-                    keys[2]
-                  } MCFX-VAR ${variables[keys[3]].scoreboardID}`,
-                ];
-              } else {
-                // Performing an operation
-                return operationParser(
-                  keys[1],
-                  keys[2],
-                  keys[3],
-                  variables,
-                  "direct"
-                );
-              }
-            } else if (keys[2].substring(0, 1) === "(") {
-              // Setting to an expression
-              return operationParser(
-                keys[2].substring(1),
-                keys[3],
-                keys[4].substring(0, keys[4].length - 1),
-                variables,
-                keys[1]
-              );
-            } else if (Object.keys(variables).includes(keys[2])) {
-              // Setting a variable to another one
-              return `scoreboard players operation MCFX-VAR ${scoreboardID} = MCFX-VAR ${
-                variables[keys[2]].scoreboardID
-              }`;
-            } else {
-              // Setting a variable
-              return `scoreboard players set MCFX-VAR ${scoreboardID} ${keys[2]}`;
+            let expressionToParse = keys.slice(2).join(" ");
+            if (operators.includes(keys[2])) {
+              expressionToParse = keys.slice(1).join(" ");
             }
+
+            const expressionScoreboard = generateScoreboardCommands(
+              expressionParser(expressionToParse, variables),
+              variables,
+              settingVariable.scoreboardID
+            );
+
+            if (!expressionScoreboard.isSingle) {
+              return [
+                ...expressionScoreboard.actions,
+                ...expressionScoreboard.cleanup,
+              ].join("\n");
+            }
+
+            return [
+              `scoreboard players set MCFX-VAR ${settingVariable.scoreboardID} ${expressionScoreboard.value}`,
+            ];
           } else if (settingVariable.alias) {
             const newValue = keys.slice(2).join(" ");
             definedVariables[keys[1]].value = newValue;

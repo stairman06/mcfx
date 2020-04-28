@@ -9,4 +9,9 @@ loop start 20 iterator
 # Says the value of the iterator
 say ${iterator}
 
+define int plus20 0
+set plus20 (iterator + 20)
+
+say ${plus20}
+
 loop end
