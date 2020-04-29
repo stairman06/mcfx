@@ -35,40 +35,42 @@ function generateUniqueID(varName, fileName, dpID) {
 function parseTemplateVariables(varString, templateArgs, regularVars) {
   const final = {};
   const variables = varString.match(/(?:[^\s"]+|"[^"]*")+/g);
-  variables.forEach((variable, index) => {
-    if (
-      variable.substring(0, 1) === '"' &&
-      variable.substring(variable.length - 1) === '"'
-    ) {
-      final[templateArgs[index]] = {
-        type: "string",
-        alias: true,
-        value: variable.substring(1, variable.length - 1),
-      };
-    } else if (variable.match(/\$\{.*?\}/g)) {
-      const initialVar = regularVars[getVarName(variable)];
-      final[templateArgs[index]] = initialVar;
-    } else if (isSelector(variable)) {
-      final[templateArgs[index]] = {
-        type: "selector",
-        alias: true,
-        value: variable,
-      };
-    }
-  });
+  if (variables) {
+    variables.forEach((variable, index) => {
+      if (
+        variable.substring(0, 1) === '"' &&
+        variable.substring(variable.length - 1) === '"'
+      ) {
+        final[templateArgs[index]] = {
+          type: "string",
+          alias: true,
+          value: variable.substring(1, variable.length - 1),
+        };
+      } else if (variable.match(/\$\{.*?\}/g)) {
+        const initialVar = regularVars[getVarName(variable)];
+        final[templateArgs[index]] = initialVar;
+      } else if (isSelector(variable)) {
+        final[templateArgs[index]] = {
+          type: "selector",
+          alias: true,
+          value: variable,
+        };
+      }
+    });
+  }
 
   return final;
 }
 
 function parseLine(line, fileName, dpID, varOverride) {
-  if (!currentSection || line.split(" ")[0] === "loop") {
-    let variables;
-    if (varOverride === undefined) {
-      variables = { ...definedVariables, ...globalVariables };
-    } else {
-      variables = { ...varOverride, ...definedVariables, ...globalVariables };
-    }
+  let variables;
+  if (varOverride === undefined) {
+    variables = { ...definedVariables, ...globalVariables };
+  } else {
+    variables = { ...varOverride, ...definedVariables, ...globalVariables };
+  }
 
+  if (!currentSection || line.split(" ")[0] === "loop") {
     if (line.match(/\$\{.*?\}/g)) {
       // Let's check and replace aliases!
 
@@ -169,6 +171,7 @@ function parseLine(line, fileName, dpID, varOverride) {
                 value,
               };
             }
+            return;
           }
           return "<<empty>>";
         case "set":
@@ -288,9 +291,7 @@ function compileMCFXTFile(fileData, fileName, dpID) {
 
   templateData.data = lines.slice(defineIndex + 1).join("\n");
 
-  definedTemplates = {
-    [templateData.id]: templateData,
-  };
+  definedTemplates[templateData.id] = templateData;
 }
 
 function getLoadToAdd() {

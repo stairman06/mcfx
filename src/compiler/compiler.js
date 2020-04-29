@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const rimraf = require("rimraf");
 const chalk = require("chalk");
+const mkdirp = require("mkdirp");
 const {
   compileMCFXFile,
   compileMCFXTFile,
@@ -65,6 +66,21 @@ const Compiler = {
       fs.readdir(functionsPath, (err, files) => {
         files.forEach((file) => {
           if (path.extname(file) === ".mcfx") {
+            if (
+              !fs.existsSync(
+                path.join(
+                  this.outPath,
+                  `data/${this.dpMeta.id}/functions${subPath}`
+                )
+              )
+            ) {
+              mkdirp.sync(
+                path.join(
+                  this.outPath,
+                  `data/${this.dpMeta.id}/functions${subPath}`
+                )
+              );
+            }
             fs.writeFileSync(
               path.join(
                 this.outPath,
@@ -74,13 +90,13 @@ const Compiler = {
               ),
               compileMCFXFile(
                 fs
-                  .readFileSync(path.join(functionsPath, subPath, file), "utf8")
+                  .readFileSync(path.join(functionsPath, file), "utf8")
                   .replace(/\r/g, ""),
                 `${subPath}${path.parse(file).name}`,
                 this.dpMeta.id
               )
                 .replace(/<<empty>>/g, "")
-                .replace(/^\s*\n/gm, "")
+                .replace(/^\s*$(?:\r\n?|\n)/gm, "")
             );
 
             resolve();
@@ -94,6 +110,13 @@ const Compiler = {
             );
 
             resolve();
+          } else if (
+            fs.lstatSync(path.join(functionsPath, file)).isDirectory()
+          ) {
+            this.compileFunctions(
+              path.join(functionsPath, file),
+              `${subPath}/${file}/`
+            );
           }
         });
       });
@@ -114,6 +137,15 @@ const Compiler = {
                 await this.compileFunctions(
                   path.join(this.srcPath, `data/${this.dpMeta.id}/functions`),
                   "/"
+                );
+                break;
+              default:
+                fs.mkdirSync(
+                  path.join(this.outPath, `/data/${this.dpMeta.id}/${dpData}`)
+                );
+                this.copyDirSync(
+                  path.join(this.srcPath, `data/${this.dpMeta.id}/${dpData}`),
+                  path.join(this.outPath, `/data/${this.dpMeta.id}/${dpData}/`)
                 );
                 break;
             }
@@ -149,6 +181,9 @@ const Compiler = {
 
             if (LTA) loadValues.unshift(`${this.dpMeta.id}:__mcfx_load`);
 
+            if (this.dpMeta.tags && this.dpMeta.tags.load) {
+              loadValues = [...loadValues, ...this.dpMeta.tags.load];
+            }
             fs.writeFileSync(
               path.join(
                 this.outPath,
@@ -178,16 +213,46 @@ const Compiler = {
     });
   },
 
-  createSubroutine(data) {
-    const id = Math.random().toString(36).substring(8);
+  copyDirSync(src, dest) {
+    const exists = fs.existsSync(src);
+    const stats = exists && fs.statSync(src);
+    const isDirectory = exists && stats.isDirectory();
+    if (exists && isDirectory) {
+      if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest);
+      }
+      fs.readdirSync(src).forEach((childItem) => {
+        this.copyDirSync(path.join(src, childItem), path.join(dest, childItem));
+      });
+    } else if (!fs.existsSync(dest)) {
+      fs.copyFileSync(src, dest);
+    }
+  },
+
+  createSubroutine(data, forceName) {
+    let id, p, namepath;
+
+    if (!forceName) {
+      id = Math.random().toString(36).substring(8);
+      p = `/data/${Compiler.dpMeta.id}/functions/__mcfx_subroutine/${id}.mcfunction`;
+      namepath = `__mcfx_subroutine/${id}`;
+    } else {
+      id = forceName;
+      if (forceName.substring(0, 1) === "/") {
+        namepath = forceName.substring(1);
+        p = `/data/${Compiler.dpMeta.id}/functions${forceName}.mcfunction`;
+        mkdirp.sync(path.join(Compiler.outPath, path.dirname(p)));
+      } else {
+        namepath = forceName;
+        p = `/data/${Compiler.dpMeta.id}/functions/__mcfx_subroutine/${id}.mcfunction`;
+      }
+    }
+
     fs.writeFileSync(
-      path.join(
-        this.outPath,
-        `/data/${this.dpMeta.id}/functions/__mcfx_subroutine/${id}.mcfunction`
-      ),
-      data
+      path.join(Compiler.outPath, p),
+      data.replace(/<<empty>>/g, "").replace(/^\s*$(?:\r\n?|\n)/gm, "")
     );
-    return id;
+    return namepath;
   },
 };
 

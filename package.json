@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "chalk": "^4.0.0",
+    "mkdirp": "^1.0.4",
     "rimraf": "^3.0.2",
     "yargs": "^15.3.1"
   }

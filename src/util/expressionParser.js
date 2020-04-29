@@ -82,6 +82,25 @@ function generateScoreboardCommands(tokenized, variables, applyTo = "_temp") {
   const mathtempIDs = {};
   let lastOutArg = "";
 
+  let groupedTokens = [];
+  let currentTokenIndex = 0;
+  tokenized.forEach((token, index) => {
+    if (token.type === "operator") {
+      let t = { ...token };
+
+      if (currentTokenIndex !== 0) {
+        t.arg1 = tokenized[currentTokenIndex];
+      } else {
+        t.arg1 = tokenized[index - 1];
+      }
+      t.arg2 = tokenized[index + 1];
+
+      currentTokenIndex = index;
+
+      groupedTokens.push(t);
+    }
+  });
+
   const precalculate = (arg1, operator, arg2) => {
     if (operator.operator === "+") {
       return parseInt(arg1.value) + parseInt(arg2.value);
