@@ -1,35 +1,29 @@
-const crypto = require("crypto");
-const { parseVanillaLine } = require("./vanillaCommand");
-const { commandSendChat } = require("./command/sendChat");
-const operationParser = require("./util/operationParser");
-const getVarName = require("./util/getVarName");
-const isSelector = require("./util/isSelector");
-const {
-  expressionParser,
-  generateScoreboardCommands,
-  operators,
-} = require("./util/expressionParser");
+const crypto = require('crypto');
+const { parseVanillaLine } = require('./vanillaCommand');
+const { commandSendChat } = require('./command/sendChat');
+const operationParser = require('./util/operationParser');
+const getVarName = require('./util/getVarName');
+const isSelector = require('./util/isSelector');
+const { expressionParser, generateScoreboardCommands, operators } = require('./util/expressionParser');
 
-const loadToAdd = [
-  `tellraw @a [{"text":"MCFX ALPHA","bold":true},{"text":" Loaded", "bold":false}]`,
-];
+const loadToAdd = [];
 
-const operations = ["+=", "/=", "%=", "-=", "*="];
+const operations = ['+=', '/=', '%=', '-=', '*='];
 
 let definedVariables = {};
 let globalVariables = {};
 let definedTemplates = {};
 
-let currentSection = "";
+let currentSection = '';
 let currentSectionList = [];
 let currentLoopTimes = 0;
-let currentLoopIName = "";
+let currentLoopIName = '';
 let currentLoopStartOne = false;
 
 function generateUniqueID(varName, fileName, dpID) {
-  const sum = crypto.createHash("sha1");
+  const sum = crypto.createHash('sha1');
   sum.update(`${dpID}-${fileName}-${varName}`);
-  return sum.digest("hex").substring(3, 14);
+  return sum.digest('hex').substring(3, 14);
 }
 
 function parseTemplateVariables(varString, templateArgs, regularVars) {
@@ -37,23 +31,20 @@ function parseTemplateVariables(varString, templateArgs, regularVars) {
   const variables = varString.match(/(?:[^\s"]+|"[^"]*")+/g);
   if (variables) {
     variables.forEach((variable, index) => {
-      if (
-        variable.substring(0, 1) === '"' &&
-        variable.substring(variable.length - 1) === '"'
-      ) {
+      if (variable.substring(0, 1) === '"' && variable.substring(variable.length - 1) === '"') {
         final[templateArgs[index]] = {
-          type: "string",
+          type: 'string',
           alias: true,
-          value: variable.substring(1, variable.length - 1),
+          value: variable.substring(1, variable.length - 1)
         };
       } else if (variable.match(/\$\{.*?\}/g)) {
         const initialVar = regularVars[getVarName(variable)];
         final[templateArgs[index]] = initialVar;
       } else if (isSelector(variable)) {
         final[templateArgs[index]] = {
-          type: "selector",
+          type: 'selector',
           alias: true,
-          value: variable,
+          value: variable
         };
       }
     });
@@ -70,11 +61,11 @@ function parseLine(line, fileName, dpID, varOverride) {
     variables = { ...varOverride, ...definedVariables, ...globalVariables };
   }
 
-  if (!currentSection || line.split(" ")[0] === "loop") {
+  if (!currentSection || line.split(' ')[0] === 'loop') {
     if (line.match(/\$\{.*?\}/g)) {
       // Let's check and replace aliases!
 
-      line = line.replace(/\$\{.*?\}/g, (match) => {
+      line = line.replace(/\$\{.*?\}/g, match => {
         const varName = getVarName(match);
         if (variables[varName] && variables[varName].alias) {
           return variables[varName].value;
@@ -84,34 +75,34 @@ function parseLine(line, fileName, dpID, varOverride) {
       });
     }
 
-    const keys = line.split(" ");
+    const keys = line.split(' ');
 
-    if (keys[0] !== "#") {
+    if (keys[0] !== '#') {
       switch (keys[0]) {
-        case "define":
+        case 'define':
           let context,
             isAlias = false,
             type,
             name,
             value;
 
-          if (keys[1] === "global" || keys[1] === "local") {
+          if (keys[1] === 'global' || keys[1] === 'local') {
             context = keys[1];
 
-            if (keys[2] === "alias") {
+            if (keys[2] === 'alias') {
               isAlias = true;
               name = keys[3];
-              value = keys.slice(4).join(" ");
+              value = keys.slice(4).join(' ');
             } else {
               type = keys[2];
               name = keys[3];
               value = keys[4];
             }
           } else {
-            if (keys[1] === "alias") {
+            if (keys[1] === 'alias') {
               isAlias = true;
               name = keys[2];
-              value = keys.slice(3).join(" ");
+              value = keys.slice(3).join(' ');
             } else {
               type = keys[1];
               name = keys[2];
@@ -119,67 +110,58 @@ function parseLine(line, fileName, dpID, varOverride) {
             }
           }
           // Defining a variable
-          if (type === "int" && !isAlias) {
+          if (type === 'int' && !isAlias) {
             // Defining an integer; use scoreboard
-            const scoreboardID = `MCFX-${generateUniqueID(
-              name,
-              fileName,
-              dpID
-            )}`;
+            const scoreboardID = `MCFX-${generateUniqueID(name, fileName, dpID)}`;
 
             const expressionScoreboard = generateScoreboardCommands(
-              expressionParser(keys.slice(3).join(" "), variables),
+              expressionParser(keys.slice(3).join(' '), variables),
               variables,
               scoreboardID
             );
 
             definedVariables[name] = {
-              type: "int",
-              scoreboardID,
+              type: 'int',
+              scoreboardID
             };
 
-            if (context === "global") {
+            if (context === 'global') {
               globalVariables[name] = {
-                type: "int",
-                scoreboardID,
+                type: 'int',
+                scoreboardID
               };
             }
 
             loadToAdd.push(`scoreboard objectives add ${scoreboardID} dummy`);
 
             if (!expressionScoreboard.isSingle) {
-              return [
-                ...expressionScoreboard.actions,
-                ...expressionScoreboard.cleanup,
-              ].join("\n");
+              return [...expressionScoreboard.actions, ...expressionScoreboard.cleanup].join('\n');
             } else {
-              return [
-                `scoreboard players set MCFX-VAR ${scoreboardID} ${expressionScoreboard.value}`,
-              ];
+              return [`scoreboard players set MCFX-VAR ${scoreboardID} ${expressionScoreboard.value}`];
             }
           } else if (isAlias) {
             definedVariables[name] = {
-              type: "raw",
+              type: 'raw',
               alias: isAlias,
-              value,
+              value
             };
 
-            if (context === "global") {
+            if (context === 'global') {
               globalVariables[name] = {
-                type: "raw",
+                type: 'raw',
                 alias: isAlias,
-                value,
+                value
               };
             }
             return;
           }
-          return "<<empty>>";
-        case "set":
+          return '<<empty>>';
+        case 'set':
           const settingVariable = variables[keys[1]];
-          if (settingVariable.type === "int" && !settingVariable.alias) {
-            let expressionToParse = keys.slice(2).join(" ");
+          if (settingVariable.type === 'int' && !settingVariable.alias) {
+            let expressionToParse = keys.slice(2).join(' ');
             if (operators.includes(keys[2])) {
-              expressionToParse = keys.slice(1).join(" ");
+              expressionToParse = keys.slice(1).join(' ');
             }
 
             const expressionScoreboard = generateScoreboardCommands(
@@ -189,17 +171,12 @@ function parseLine(line, fileName, dpID, varOverride) {
             );
 
             if (!expressionScoreboard.isSingle) {
-              return [
-                ...expressionScoreboard.actions,
-                ...expressionScoreboard.cleanup,
-              ].join("\n");
+              return [...expressionScoreboard.actions, ...expressionScoreboard.cleanup].join('\n');
             }
 
-            return [
-              `scoreboard players set MCFX-VAR ${settingVariable.scoreboardID} ${expressionScoreboard.value}`,
-            ];
+            return [`scoreboard players set MCFX-VAR ${settingVariable.scoreboardID} ${expressionScoreboard.value}`];
           } else if (settingVariable.alias) {
-            const newValue = keys.slice(2).join(" ");
+            const newValue = keys.slice(2).join(' ');
             definedVariables[keys[1]].value = newValue;
 
             if (globalVariables[keys[1]]) {
@@ -208,49 +185,45 @@ function parseLine(line, fileName, dpID, varOverride) {
             return;
           }
 
-        case "sendchat":
+        case 'sendchat':
           return commandSendChat(keys, variables);
-        case "template":
+        case 'template':
           if (Object.keys(definedTemplates).includes(keys[1])) {
             const template = definedTemplates[keys[1]];
             return compileMCFXFile(
               template.data,
               `templates/${template.id}.mcfxt`,
               dpID,
-              parseTemplateVariables(
-                keys.slice(2).join(" "),
-                template.args,
-                variables
-              )
+              parseTemplateVariables(keys.slice(2).join(' '), template.args, variables)
             );
           }
           break;
-        case "loop":
-          if (keys[1] === "start") {
-            currentSection = "loop";
+        case 'loop':
+          if (keys[1] === 'start') {
+            currentSection = 'loop';
             currentLoopTimes = keys[2];
             currentLoopIName = keys[3];
-            if (keys[4] === "startAtOne") {
+            if (keys[4] === 'startAtOne') {
               currentLoopTimes++;
               currentLoopStartOne = true;
             } else {
               currentLoopStartOne = false;
             }
-          } else if (keys[1] === "end") {
-            currentSection = "";
+          } else if (keys[1] === 'end') {
+            currentSection = '';
             let t = [];
             const starter = currentLoopStartOne ? 1 : 0;
             for (let i = starter; i < currentLoopTimes; i++) {
-              currentSectionList.forEach((l) =>
+              currentSectionList.forEach(l =>
                 t.push(
                   parseLine(l, fileName, dpID, {
-                    [currentLoopIName]: { type: "raw", alias: true, value: i },
+                    [currentLoopIName]: { type: 'raw', alias: true, value: i }
                   })
                 )
               );
             }
 
-            return t.join("\n");
+            return t.join('\n');
           }
           break;
         default:
@@ -266,30 +239,30 @@ function parseLine(line, fileName, dpID, varOverride) {
 
 function compileMCFXFile(fileData, fileName, dpID, varOverride) {
   definedVariables = {};
-  currentSection = "";
+  currentSection = '';
   return fileData
-    .split("\n")
-    .map((line) => parseLine(line, fileName, dpID, varOverride))
-    .join("\n");
+    .split('\n')
+    .map(line => parseLine(line, fileName, dpID, varOverride))
+    .join('\n');
 }
 
 function compileMCFXTFile(fileData, fileName, dpID) {
-  const lines = fileData.split("\n");
+  const lines = fileData.split('\n');
   let templateData, defineIndex;
   lines.forEach((line, index) => {
-    if (line.substring(0, 1) !== "#") {
-      const keys = line.split(" ");
-      if (keys[0] === "define" && keys[1] === "template") {
+    if (line.substring(0, 1) !== '#') {
+      const keys = line.split(' ');
+      if (keys[0] === 'define' && keys[1] === 'template') {
         defineIndex = index;
         templateData = {
           id: keys[2],
-          args: keys.slice(3),
+          args: keys.slice(3)
         };
       }
     }
   });
 
-  templateData.data = lines.slice(defineIndex + 1).join("\n");
+  templateData.data = lines.slice(defineIndex + 1).join('\n');
 
   definedTemplates[templateData.id] = templateData;
 }
@@ -302,5 +275,5 @@ module.exports = {
   compileMCFXFile,
   compileMCFXTFile,
   getLoadToAdd,
-  parseLine,
+  parseLine
 };

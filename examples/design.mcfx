@@ -44,4 +44,15 @@ execute if score @p testScore >= ${10} run say Greater than 10
 # scoreboard objectives remove mathtemp11111
 
 
+# -- Variable Comparisons --
+define int firstVariable = 5
+define int secondVariable = 10
 
+execute if secondVariable >= 10 run say Greater than 10
+
+# -- If blocks --
+if 10 > 5 then
+  say 10 is greater than 5
+end 
+
+# automatically generates a subroutine if block is more than 1 line long

@@ -1,13 +1,13 @@
-const coordinateParser = require("./coordinateParser");
-const getVarName = require("./getVarName");
+const coordinateParser = require('./coordinateParser');
+const getVarName = require('./getVarName');
 
 function execTempPos(posInfo, variables, command, outputExecute = true) {
   const { x, y, z, r1, r2 } = posInfo;
 
   const parsedCoords = coordinateParser(x, y, z, variables);
-  const outCommands = [];
+  let outCommands = [...parsedCoords.prepend];
 
-  if (parsedCoords.type === "useEntity" || r1 || r2) {
+  if (parsedCoords.type === 'useEntity' || r1 || r2) {
     const tag = `mcfxpos${Math.random().toString(36).substring(7)}`;
 
     // Save a score to the entity
@@ -18,22 +18,22 @@ function execTempPos(posInfo, variables, command, outputExecute = true) {
     };
 
     // Variable positions
-    if (parsedCoords.x.type === "score") {
-      saveScore("Pos[0]", parsedCoords.x.id);
+    if (parsedCoords.x.type === 'score') {
+      saveScore('Pos[0]', parsedCoords.x.id);
     }
 
-    if (parsedCoords.y.type === "score") {
-      saveScore("Pos[1]", parsedCoords.y.id);
+    if (parsedCoords.y.type === 'score') {
+      saveScore('Pos[1]', parsedCoords.y.id);
     }
 
-    if (parsedCoords.z.type === "score") {
-      saveScore("Pos[2]", parsedCoords.z.id);
+    if (parsedCoords.z.type === 'score') {
+      saveScore('Pos[2]', parsedCoords.z.id);
     }
 
     // Rotation
     if (r1 || r2) {
-      let permR1 = "0",
-        permR2 = "0";
+      let permR1 = '0',
+        permR2 = '0';
       if (r1.match(/\$\{.*?\}/g)) {
         outCommands.push(
           `execute store result entity @e[tag=${tag},limit=1] Rotation[0] float 1 run scoreboard players get MCFX-VAR ${
@@ -54,9 +54,7 @@ function execTempPos(posInfo, variables, command, outputExecute = true) {
         permR2 = r2;
       }
 
-      outCommands.push(
-        `execute as @e[tag=${tag}] at @s run tp @s ~ ~ ~ ${permR1} ${permR2}`
-      );
+      outCommands.push(`execute as @e[tag=${tag}] at @s run tp @s ~ ~ ~ ${permR1} ${permR2}`);
     }
 
     outCommands.unshift(
@@ -67,12 +65,12 @@ function execTempPos(posInfo, variables, command, outputExecute = true) {
 
     outCommands.push(`kill @e[tag=${tag},limit=1]`);
   } else {
-    outCommands.push(
-      `${outputExecute ? `execute at ${x} ${y} ${z} run ` : ""}${command}`
-    );
+    outCommands.push(`${outputExecute ? `execute at ${x} ${y} ${z} run ` : ''}${command}`);
   }
 
-  return outCommands.join("\n");
+  outCommands = [...outCommands, ...parsedCoords.cleanup];
+
+  return outCommands.join('\n');
 }
 
 module.exports = execTempPos;

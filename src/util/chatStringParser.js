@@ -1,9 +1,6 @@
-const isSelector = require("./isSelector");
-const CompileError = require("../error/compileError");
-const {
-  expressionParser,
-  generateScoreboardCommands,
-} = require("./expressionParser");
+const isSelector = require('./isSelector');
+const CompileError = require('../error/compileError');
+const { expressionParser, generateScoreboardCommands } = require('./expressionParser');
 
 // Converts a standard, non-JSON Object string (e.g. "Test ${variable}") into a JSON one for tellraw output
 function parseChatString(
@@ -23,7 +20,7 @@ function parseChatString(
   outString.replace(/\$\{.*?\}/g, (match, start) => {
     // is a mcfx variable
     requiresCustomParsing = true;
-    let varName = match.replace(/\s+/g, "");
+    let varName = match.replace(/\s+/g, '');
     varName = varName.substring(2, varName.length - 1);
 
     outputTellraw.push({
@@ -37,9 +34,7 @@ function parseChatString(
       });
     } else {
       const variable = variables[varName];
-      const scoreboardCommands = generateScoreboardCommands(
-        expressionParser(varName, variables)
-      );
+      const scoreboardCommands = generateScoreboardCommands(expressionParser(varName, variables));
 
       if (!scoreboardCommands.isSingle) {
         extraCommandsBefore.push(scoreboardCommands.actions.flat());
@@ -47,7 +42,7 @@ function parseChatString(
 
         outputTellraw.push({
           score: {
-            name: "MCFX-VAR",
+            name: 'MCFX-VAR',
             objective: scoreboardCommands.output,
           },
         });
@@ -82,11 +77,9 @@ function parseChatString(
   extraCommandsAfter = extraCommandsAfter.flat();
 
   if (requiresCustomParsing) {
-    return [
-      ...extraCommandsBefore,
-      `tellraw ${selector} ${JSON.stringify(outputTellraw)}`,
-      ...extraCommandsAfter,
-    ].join("\n");
+    return [...extraCommandsBefore, `tellraw ${selector} ${JSON.stringify(outputTellraw)}`, ...extraCommandsAfter].join(
+      '\n'
+    );
   }
 
   if (useSelectorInBackup) {
